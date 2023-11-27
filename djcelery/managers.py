@@ -195,6 +195,24 @@ class TaskManager(ResultManager):
                         'repeatable-read within the same transaction '
                         'may give outdated results. Be sure to commit the '
                         'transaction for each poll iteration.'))
+    
+    def _get_server_version_info_for_mysql(self):
+        cursor = self.connection_for_read().cursor()
+        cursor.execute("select version()")
+        val = cursor.fetchone()[0]
+        cursor.close()
+
+        if sys.version_info >= (3, 0) and isinstance(val, bytes):
+            val = val.decode()
+
+        version = []
+        r = re.compile(r"[.\-]")
+        for n in r.split(val):
+            try:
+                version.append(int(n))
+            except ValueError:
+                version.append(n)
+        return tuple(version) 
 
 
 class TaskSetManager(ResultManager):
